@@ -1,0 +1,98 @@
+/* ========================================================= */
+/* 應用程式主體與側邊欄基礎樣式 */
+/* ========================================================= */
+body {
+    font-family: 'Microsoft JhengHei', sans-serif;
+}
+
+/* 隱藏 Streamlit 預設的右上角選單和 Footer */
+#MainMenu {
+    visibility: hidden;
+}
+footer {
+    visibility: hidden;
+}
+
+/* ========================================================= */
+/* 卡片樣式 (data-card) */
+/* ========================================================= */
+.data-card {
+    /* 外框：提供一個圓角和陰影 */
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    background-color: #ffffff;
+}
+
+/* 卡片標題樣式 (card-header) */
+.card-header {
+    /* 確保標題粗體、大字體、並有底線或裝飾 */
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #2c3e50; /* 深色標題 */
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 15px !important; /* 確保與內容間距 */
+}
+
+.card-header span {
+    /* 標題前的圖示樣式 */
+    margin-right: 10px;
+    color: #3498db; /* 藍色強調色 */
+}
+
+/* ========================================================= */
+/* 進度條/統計條樣式 (針對卡片 4 的自訂 HTML) */
+/* ========================================================= */
+
+.bar-container {
+    margin-bottom: 15px;
+}
+
+.bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #34495e;
+    margin-bottom: 5px;
+}
+
+.progress-bar {
+    /* 進度條容器 */
+    background-color: #f1f1f1;
+    border-radius: 6px;
+    height: 12px;
+    overflow: hidden; /* 確保子元素不會溢出圓角 */
+}
+
+/* 進度條內部的條紋顏色已在 Python 中直接指定 */
+
+/* ========================================================= */
+/* Streamlit 內建元素的調整 */
+/* ========================================================= */
+
+/* 調整 Streamlit 警告/成功的區塊樣式 */
+.stAlert {
+    border-radius: 6px;
+    font-size: 1em;
+}
+
+/* 調整 Sidebar 的寬度與樣式 */
+section[data-testid="stSidebar"] {
+    padding-top: 25px;
+    padding-left: 20px;
+}
+
+/* 讓 Streamlit metric 區塊更緊湊 */
+[data-testid="stMetric"] {
+    padding: 5px !important;
+}
+
+/* 讓 Streamlit metric 的標籤稍微大一點 */
+[data-testid="stMetricLabel"] {
+    font-size: 1em;
+    font-weight: bold;
+}
