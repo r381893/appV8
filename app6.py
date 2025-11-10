@@ -105,6 +105,37 @@ if data_source and df is not None and not df.empty:
     mc_seed = st.sidebar.number_input("Monte Carlo隨機種子", value=42, step=1)
     remove_low_pct = st.sidebar.number_input("去除前幾%最低值", min_value=0, max_value=40, value=5, step=1)
     remove_high_pct = st.sidebar.number_input("去除後幾%最高值", min_value=0, max_value=40, value=5, step=1)
+    
+    # ====== 新增：自選績效指標設定 ======
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("🛠️ 績效指標客製化")
+    
+    available_metrics = {
+        "總交易次數": "num_trades",
+        "勝率 (%)": "win_rate",
+        "獲利次數": "num_wins",
+        "虧損次數": "num_losses",
+        "平均獲利金額": "avg_profit",
+        "平均虧損金額": "avg_loss",
+        "風險報酬比 (R/R)": "risk_reward_ratio",
+        "最大虧損 (MDD)": "max_dd_value",
+        "最大單筆報酬率": "max_gain_pct",
+        "最大單筆虧損率": "max_loss_pct",
+        "總交易持有天數": "total_days",
+    }
+    
+    # 預設選中所有項目
+    selected_metrics_keys = st.sidebar.multiselect(
+        "選擇要顯示的績效指標",
+        options=list(available_metrics.keys()),
+        default=list(available_metrics.keys())
+    )
+    
+    # 將選中的指標轉換為內部使用的 key
+    selected_metrics_map = {available_metrics[k]: k for k in selected_metrics_keys}
+    
+    # ==================================
+
 
     # ====== 參數優化主體 ======
     def backtest(moving_avg_days):
@@ -122,7 +153,7 @@ if data_source and df is not None and not df.empty:
             if monthly_invest > 0 and this_month != last_month:
                 capital += monthly_invest
             last_month = this_month
-            if pd.isna(df_bt.loc[i, f'{moving_avg_days}日線']):
+            if pd.isna(df_bt.loc[i, f'{moving_avg_days}日線}']:
                 capital_history.append(capital)
                 capital_date.append(df_bt.loc[i, '日期'])
                 index_history.append(df_bt.loc[i, '收盤價'])
@@ -325,7 +356,7 @@ if data_source and df is not None and not df.empty:
             if monthly_invest > 0 and this_month != last_month:
                 capital += monthly_invest
             last_month = this_month
-            if pd.isna(df.loc[i, f'{moving_avg_days}日線']):
+            if pd.isna(df.loc[i, f'{moving_avg_days}日線}']:
                 capital_history.append(capital)
                 capital_date.append(df.loc[i, '日期'])
                 index_history.append(df.loc[i, '收盤價'])
@@ -587,31 +618,22 @@ if data_source and df is not None and not df.empty:
             ax2.text(i, v, f"{v:.1f}%", ha='center', va='bottom', fontsize=8)
     st.pyplot(fig2)
 
-    # ===== 績效統計分析 (已修改：新增獲利/虧損次數、平均金額、風險報酬比) =====
+    # ===== 績效統計分析 (已修改：新增獲利/虧損次數、平均金額、風險報酬比、自選指標) =====
     st.subheader("📊 績效統計分析")
     if not trades_df.empty:
-        # **【新增計算邏輯】**
-        # 區分獲利/虧損交易
+        # **【計算邏輯】**
         winning_trades = trades_df[trades_df['損益金額(元)'] > 0]
         losing_trades = trades_df[trades_df['損益金額(元)'] <= 0]
-        
         num_wins = len(winning_trades)
         num_losses = len(losing_trades)
-        
-        # 計算平均獲利/虧損金額
         avg_profit = winning_trades['損益金額(元)'].mean() if num_wins > 0 else 0
         avg_loss = losing_trades['損益金額(元)'].mean() if num_losses > 0 else 0
-        
-        # 風險報酬比 (取平均虧損金額的絕對值)
         risk_reward_ratio = -avg_profit / avg_loss if avg_loss < 0 and avg_profit > 0 else np.nan
-        
         win_rate = (trades_df['損益金額(元)'] > 0).mean() * 100
         peak = capital_history[0]
         max_dd_value = 0
         mdd_start = mdd_end = capital_date[0]
         temp_start = capital_date[0]
-        
-        # MDD 計算
         for i in range(len(capital_history)):
             if capital_history[i] > peak:
                 peak = capital_history[i]
@@ -621,41 +643,50 @@ if data_source and df is not None and not df.empty:
                 max_dd_value = dd
                 mdd_start = temp_start
                 mdd_end = capital_date[i]
-                
-        # 單筆報酬率計算
         trades_df['報酬率 (%)'] = trades_df['損益金額(元)'] / (
                         trades_df['進場價'] * trades_df['交易口數'] * point_value) * 100
         max_gain_pct = trades_df['報酬率 (%)'].max()
         max_loss_pct = trades_df['報酬率 (%)'].min()
         total_days = trades_df['持有天數'].sum()
         
-        # **【修改展示排版】**
-        
-        # 第一排：次數與勝率
-        st.markdown('#### 核心統計')
-        col_main1, col_main2, col_main3, col_main4 = st.columns(4)
-        col_main1.metric("總交易次數", f"{len(trades_df):,}")
-        col_main2.metric("勝率 (%)", f"{win_rate:.2f}%")
-        col_main3.metric("獲利次數", f"{num_wins:,} 次")
-        col_main4.metric("虧損次數", f"{num_losses:,} 次")
-        
-        # 第二排：平均損益與風險報酬比
-        st.markdown('#### 平均損益與風險')
-        col_risk1, col_risk2, col_risk3, col_risk4 = st.columns(4)
-        col_risk1.metric("平均獲利金額", f"{avg_profit:,.0f} 元")
-        col_risk2.metric("平均虧損金額", f"{-avg_loss:,.0f} 元", delta_color='inverse', help="此為虧損的絕對值")
-        col_risk3.metric("風險報酬比 (R/R)", 
-                         f"{risk_reward_ratio:.2f} : 1" if not np.isnan(risk_reward_ratio) else "N/A", 
-                         help="平均獲利金額 / 平均虧損金額的絕對值")
-        col_risk4.metric("最大虧損 (MDD)", f"{int(max_dd_value):,} 元", delta_color='inverse')
-        
-        # 第三排：極端交易與時間
-        st.markdown('#### 極端交易與時間')
-        col_ext1, col_ext2, col_ext3 = st.columns(3)
-        col_ext1.metric("最大單筆報酬率", f"{max_gain_pct:.2f} %")
-        col_ext2.metric("最大單筆虧損率", f"{max_loss_pct:.2f} %", delta_color='inverse')
-        col_ext3.metric("總交易持有天數", f"{total_days:,} 天")
+        # **【修改展示排版 - 根據自選指標動態顯示】**
+        st.markdown('#### 績效指標')
 
+        # 將所有計算結果整合到一個字典中
+        metrics_values = {
+            "num_trades": (f"{len(trades_df):,}", "總交易次數", None),
+            "win_rate": (f"{win_rate:.2f}%", "勝率 (%)", None),
+            "num_wins": (f"{num_wins:,} 次", "獲利次數", None),
+            "num_losses": (f"{num_losses:,} 次", "虧損次數", None),
+            "avg_profit": (f"{avg_profit:,.0f} 元", "平均獲利金額", None),
+            "avg_loss": (f"{-avg_loss:,.0f} 元", "平均虧損金額", 'inverse'), # 使用絕對值
+            "risk_reward_ratio": (f"{risk_reward_ratio:.2f} : 1" if not np.isnan(risk_reward_ratio) else "N/A", "風險報酬比 (R/R)", None),
+            "max_dd_value": (f"{int(max_dd_value):,} 元", "最大虧損 (MDD)", 'inverse'),
+            "max_gain_pct": (f"{max_gain_pct:.2f} %", "最大單筆報酬率", None),
+            "max_loss_pct": (f"{max_loss_pct:.2f} %", "最大單筆虧損率", 'inverse'),
+            "total_days": (f"{total_days:,} 天", "總交易持有天數", None),
+        }
+        
+        # 根據 selected_metrics_map 篩選並排序要顯示的指標
+        display_metrics = []
+        for key_internal, key_display in selected_metrics_map.items():
+            if key_internal in metrics_values:
+                display_metrics.append((key_display, *metrics_values[key_internal]))
+                
+        # 動態創建欄位並顯示指標 (每排最多 4 個)
+        for i in range(0, len(display_metrics), 4):
+            cols = st.columns(min(4, len(display_metrics) - i))
+            for j, metric_data in enumerate(display_metrics[i:i+4]):
+                title, value, delta_color = metric_data[0], metric_data[1], metric_data[2]
+                if title == "平均虧損金額": # 特別處理 Help text
+                    cols[j].metric(title, value, delta_color=delta_color, help="此為虧損的絕對值")
+                elif title == "風險報酬比 (R/R)": # 特別處理 Help text
+                    cols[j].metric(title, value, delta_color=delta_color, help="平均獲利金額 / 平均虧損金額的絕對值")
+                else:
+                    cols[j].metric(title, value, delta_color=delta_color)
+
+        # 最大回撤期間 (保持固定顯示)
+        st.markdown("---")
         st.markdown(f"""
         **🔻 最大回撤期間：**
         - 起始日期：**{mdd_start.strftime('%Y-%m-%d')}**
@@ -712,6 +743,8 @@ if data_source and df is not None and not df.empty:
         ax.set_xlabel("天數")
         ax.legend()
         st.pyplot(fig)
+        # 【註解 1 - 已加回】
+        st.caption("Monte Carlo 模擬路徑圖：灰色線為根據歷史日報酬率隨機生成的潛在資產路徑，藍色線為策略的實際資金曲線。")
 
         # 百分位區間過濾 + 分箱
         final_assets = sim_results[:, -1]
@@ -736,6 +769,8 @@ if data_source and df is not None and not df.empty:
             if y_pos > 0:
                 ax2.text(x_pos, y_pos, str(counts[i]), ha='center', va='bottom', fontsize=9)
         st.pyplot(fig2)
+        # 【註解 2 - 已加回】
+        st.caption(f"經過 Monte Carlo 模擬後，最終資產的頻率分佈圖，並已去除前 {remove_low_pct}% 最低值與後 {remove_high_pct}% 最高值，以提供更具參考性的區間預測。")
 
         hist_df = pd.DataFrame({
             '資產下界': edges[:-1],
