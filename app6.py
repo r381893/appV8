@@ -153,7 +153,8 @@ if data_source and df is not None and not df.empty:
             if monthly_invest > 0 and this_month != last_month:
                 capital += monthly_invest
             last_month = this_month
-            if pd.isna(df_bt.loc[i, f'{moving_avg_days}日線}']:
+            # 修正 1: 移除 f-string 結尾多餘的 }
+            if pd.isna(df_bt.loc[i, f'{moving_avg_days}日線']):
                 capital_history.append(capital)
                 capital_date.append(df_bt.loc[i, '日期'])
                 index_history.append(df_bt.loc[i, '收盤價'])
@@ -356,7 +357,8 @@ if data_source and df is not None and not df.empty:
             if monthly_invest > 0 and this_month != last_month:
                 capital += monthly_invest
             last_month = this_month
-            if pd.isna(df.loc[i, f'{moving_avg_days}日線}']:
+            # 修正 2: 移除 f-string 結尾多餘的 }
+            if pd.isna(df.loc[i, f'{moving_avg_days}日線']):
                 capital_history.append(capital)
                 capital_date.append(df.loc[i, '日期'])
                 index_history.append(df.loc[i, '收盤價'])
